@@ -18,7 +18,7 @@ class OKT_User_Table extends WP_List_Table {
 
 	function column_default($item, $column_name){
 		switch($column_name){
-			case 'id':
+//			case 'id':
 			case 'name':
 			case 'mobile':
 			case 'email':
@@ -34,7 +34,7 @@ class OKT_User_Table extends WP_List_Table {
 	function get_columns(){
 		$columns = array(
 //			'cb'        => '<input type="checkbox" />', //Render a checkbox instead of text
-			'id'     => 'ID',
+//			'id'     => 'ID',
 			'name'    => 'Name',
 			'mobile'  => 'Mobile',
 			'email'  => 'Email',
@@ -116,7 +116,10 @@ class OKT_User_Table extends WP_List_Table {
 		 * ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 		 * ---------------------------------------------------------------------
 		 **********************************************************************/
-		$args = $this->okt_build_args();
+		$args = $this->okt_build_args($per_page);
+//		echo "<pre>";
+//		var_dump($args);
+//		echo "</pre>";
 		if ( $args ) {
 			$the_query = new WP_Query( $args );
 			if ( $the_query->have_posts() ) :
@@ -133,7 +136,7 @@ class OKT_User_Table extends WP_List_Table {
 					$experience_obj = get_the_terms( get_the_ID(), 'resume_experience' );
 					$experience     = join( ', ', wp_list_pluck( $experience_obj, 'name' ) );
 					$temp = array(
-						'id' => $author_id,
+//						'id' => $author_id,
 						'name' => $first_name,
 						'mobile' => $mobile,
 						'email' => $email,
@@ -148,7 +151,8 @@ class OKT_User_Table extends WP_List_Table {
 
 		}
 		$data = $this->filtered_users;
-
+		$args2 = $this->okt_build_args(-1);
+		$the_query2 = new WP_Query( $args2 );
 		/**
 		 * REQUIRED for pagination. Let's figure out what page the user is currently
 		 * looking at. We'll need this later, so you should always include it in
@@ -162,7 +166,7 @@ class OKT_User_Table extends WP_List_Table {
 		 * without filtering. We'll need this later, so you should always include it
 		 * in your own package classes.
 		 */
-		$total_items = count($data);
+		$total_items = $the_query2->post_count;//count($data);
 
 
 		/**
@@ -192,58 +196,17 @@ class OKT_User_Table extends WP_List_Table {
 	}
 
 	/**
-	 * Process Filter Form
-	 *
-	 * @return void
-	 */
-	public function oktufe_process_filter_form() {
-		$args = $this->okt_build_args();
-		if ( $args ) {
-			$the_query = new WP_Query( $args );
-			if ( $the_query->have_posts() ) :
-				while ( $the_query->have_posts() ) :
-					$the_query->the_post();
-					$author_id      = get_post_field( 'post_author', get_the_ID() );
-					$user           = get_userdata( $author_id );
-					$first_name     = $user->user_firstname;
-					$mobile         = $user->user_nicename;
-					$email          = $user->user_email;
-					$location       = get_post_meta( get_the_ID(), '_candidate_location', true );
-					$skills_obj     = get_the_terms( get_the_ID(), 'resume_skill' );
-					$skill          = join( ', ', wp_list_pluck( $skills_obj, 'name' ) );
-					$experience_obj = get_the_terms( get_the_ID(), 'resume_experience' );
-					$experience     = join( ', ', wp_list_pluck( $experience_obj, 'name' ) );
-					echo "UserId: " . $author_id . "<br />" .
-					     "Name: " . $first_name . "<br />" .
-					     "Mobile :" . $mobile . "<br />" .
-					     "Email: " . $email . "<br />" .
-					     "Location: " . $location . "<br />" .
-					     "Skill: " . $skill . "<br />" .
-					     "Experience: " . $experience . "<br/>";
-					echo "----------------------------<br />";
-					// TODO: get _candidate _location
-					//TODO: get skill
-					//TODO: get experience
-
-				endwhile;
-				wp_reset_postdata();
-			endif;
-
-		}
-	}
-
-	/**
 	 * Build Filter Query Arguments
 	 *
 	 * @return array
 	 */
-	private function okt_build_args() {
-		$paged = (get_query_var('paged')) ? get_query_var('paged') : 1;
+	private function okt_build_args($per_page = 25) {
+		$paged = ($_GET['paged']) ? intval($_GET['paged']) : 1;
 		$args = array(
 			'post_type'      => 'resume',
 			'order'          => 'ASC',
 			'paged' => $paged,
-			'posts_per_page' => 25
+			'posts_per_page' => $per_page
 		);
 
 		if ( isset( $_GET['user-location'] ) && ! empty ( $_GET['user-location'] ) ) {
